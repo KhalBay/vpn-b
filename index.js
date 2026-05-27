@@ -24,37 +24,6 @@ app.use(express.json())
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
-// Создание таблиц (выполнить один раз)
-const initDB = async () => {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) NOT NULL DEFAULT 'brigadier' CHECK (role IN ('admin', 'brigadier')),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS questionnaires (
-                id SERIAL PRIMARY KEY,
-                materials TEXT NOT NULL,
-                quantity INTEGER NOT NULL,
-                unit VARCHAR(100) NOT NULL,
-                article INTEGER NOT NULL,
-                status VARCHAR(100) NOT NULL DEFAULT 'created',
-                created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `)
-        console.log('Таблицы созданы или уже существуют')
-    } catch (err) {
-        console.error('Ошибка при создании таблиц:', err)
-    }
-}
-
-initDB()
 
 // Middleware для аутентификации
 const authenticateToken = (req, res, next) => {
