@@ -5,7 +5,12 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 require('dotenv').config()
 
+// Функция генерации PDF
 const PDFDocument = require('pdfkit');
+const path = require('path');
+
+// Путь к шрифту с поддержкой кириллицы
+const FONT_PATH = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
 const nodemailer = require('nodemailer');
 
 // Настройка почты
@@ -29,26 +34,30 @@ const generatePDF = (questionnaire) => {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
         doc.on('error', reject);
 
+        // Регистрируем шрифт
+        doc.registerFont('DejaVu', FONT_PATH);
+
         // Заголовок
-        doc.fontSize(18).text('ЗАЯВКА НА МАТЕРИАЛЫ', { align: 'center' });
+        doc.font('DejaVu', 18).text('ЗАЯВКА НА МАТЕРИАЛЫ', { align: 'center' });
         doc.moveDown(0.5);
 
         // Информация о заявке
-        doc.fontSize(12).text(`Тип работ: ${questionnaire.work_type}`);
+        doc.font('DejaVu', 12);
+        doc.text(`Тип работ: ${questionnaire.work_type}`);
         doc.text(`Адрес: ${questionnaire.address}`);
         doc.text(`Телефон: ${questionnaire.phone || '—'}`);
         doc.text(`Дата: ${new Date(questionnaire.created_at).toLocaleString('ru-RU')}`);
         doc.moveDown();
 
         // Таблица материалов
-        doc.fontSize(14).text('МАТЕРИАЛЫ:', { underline: true });
+        doc.font('DejaVu', 14).text('МАТЕРИАЛЫ:', { underline: true });
         doc.moveDown(0.5);
 
         // Заголовки таблицы
-        doc.fontSize(10);
+        doc.font('DejaVu', 10);
         const tableTop = doc.y;
         doc.text('№', 50, tableTop);
-        doc.text('Наименование', 80, tableTop);
+        doc.text('Наименование', 80, tableTop, { width: 260 });
         doc.text('Кол-во', 350, tableTop, { width: 60, align: 'right' });
         doc.text('Ед.', 420, tableTop, { width: 40, align: 'right' });
         doc.text('Артикул', 470, tableTop, { width: 60, align: 'right' });
@@ -57,6 +66,7 @@ const generatePDF = (questionnaire) => {
         doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
 
         // Данные таблицы
+        doc.font('DejaVu', 10);
         let y = tableTop + 20;
         questionnaire.materials.forEach((material, index) => {
             if (y > 750) {
@@ -72,7 +82,7 @@ const generatePDF = (questionnaire) => {
         });
 
         doc.moveDown();
-        doc.fontSize(8).text(`Создано: ${new Date().toLocaleString('ru-RU')}`, { align: 'right' });
+        doc.font('DejaVu', 8).text(`Создано: ${new Date().toLocaleString('ru-RU')}`, { align: 'right' });
 
         doc.end();
     });
