@@ -106,9 +106,11 @@ const generatePDF = (questionnaire) => {
 
 // Функция отправки на почту
 const sendEmail = async (pdfBuffer, questionnaire) => {
+    const recipients = process.env.EMAIL_TO.split(',').map(email => email.trim());
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_TO,
+        to: recipients.join(', '),
         subject: `Новая заявка — ${questionnaire.work_type} (${questionnaire.address})`,
         text: `Поступила новая заявка.\n\nТип работ: ${questionnaire.work_type}\nАдрес: ${questionnaire.address}\nТелефон: ${questionnaire.phone || 'не указан'}\nМатериалов: ${questionnaire.materials.length} шт.`,
         attachments: [
