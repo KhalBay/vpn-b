@@ -38,7 +38,7 @@ const generatePDF = (questionnaire) => {
         doc.text(`Тип работ: ${questionnaire.work_type}`);
         doc.text(`Адрес: ${questionnaire.address}`);
         doc.text(`Телефон: ${questionnaire.phone || '—'}`);
-        doc.text(`Заявка от: ${new Date(questionnaire.created_at).toLocaleString('ru-RU')}`);
+        doc.text(`Дата доставки: ${new Date(questionnaire.created_at).toLocaleString('ru-RU')}`);
         doc.moveDown();
 
         doc.font('DejaVu', 14).text('МАТЕРИАЛЫ:', { underline: true });
@@ -72,7 +72,9 @@ const generatePDF = (questionnaire) => {
         questionnaire.materials.forEach((material, index) => {
             // Вычисляем высоту строки в зависимости от длины названия
             const nameHeight = doc.heightOfString(material.name, { width: col2Width });
-            const rowHeight = Math.max(16, nameHeight + 4);
+            let rowHeight = Math.max(16, nameHeight + 4);
+
+            rowHeight = rowHeight * 1.5;
 
             // Проверяем, нужна ли новая страница
             if (y + rowHeight > 750) {
