@@ -91,12 +91,8 @@ const getXUIClients = async () => {
         });
         if (response.data.success && response.data.obj) {
             const inbound = response.data.obj;
-            // settings может быть строкой или уже объектом
-            let settings = inbound.settings;
-            if (typeof settings === 'string') {
-                settings = JSON.parse(settings);
-            }
-            const clients = settings.clients || [];
+            // Клиенты находятся в clientStats
+            const clients = inbound.clientStats || [];
             console.log('Клиенты получены:', clients.length);
             return clients;
         }
