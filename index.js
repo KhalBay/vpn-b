@@ -105,8 +105,8 @@ const getXUIClients = async () => {
 };
 
 // Добавить клиента в 3X-UI
-const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
-    console.log('[addXUIClient] Добавляем:', email);
+const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate, group = 'users') => {
+    console.log('[addXUIClient] Добавляем:', email, 'группа:', group);
 
     const body = {
         client: {
@@ -117,13 +117,13 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
             enable: true,
             flow: 'xtls-rprx-vision',
             subId: '',
-            tgId: '',
+            tgId: 0,
+            group: group,
         },
         inboundIds: [INBOUND_ID],
     };
 
     try {
-        console.log('[addXUIClient] Отправляем...');
         const response = await xuiAxios.post(
             `/panel/api/clients/add`,
             body,
@@ -142,6 +142,7 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
         return null;
     }
 };
+
 // Удалить клиента из 3X-UI
 const removeXUIClient = async (email) => {
     console.log('[removeXUIClient] Удаляем:', email);
@@ -295,7 +296,7 @@ app.post('/vpn/demo', authenticateToken, async (req, res) => {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + parseInt(process.env.DEMO_DAYS || 7));
 
-        const xuiClient = await addXUIClient(email, uuid, password, trafficBytes, expiryDate);
+        const xuiClient = await addXUIClient(email, uuid, password, trafficBytes, expiryDate, 'demo');
         if (!xuiClient) {
             return res.status(500).json({ message: 'Ошибка создания клиента VPN' });
         }
@@ -427,7 +428,7 @@ app.post('/vpn/buy', authenticateToken, async (req, res) => {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + parseInt(process.env.PAID_DAYS || 30));
 
-        const xuiClient = await addXUIClient(email, uuid, password, trafficBytes, expiryDate);
+        const xuiClient = await addXUIClient(email, uuid, password, trafficBytes, expiryDate, 'users');
         if (!xuiClient) {
             return res.status(500).json({ message: 'Ошибка создания VPN-клиента' });
         }
