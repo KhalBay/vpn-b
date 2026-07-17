@@ -91,15 +91,23 @@ const getXUIClients = async () => {
         });
         if (response.data.success && response.data.obj) {
             const inbound = response.data.obj;
-            const clients = JSON.parse(inbound.settings || '{}').clients || [];
+            // settings может быть строкой или уже объектом
+            let settings = inbound.settings;
+            if (typeof settings === 'string') {
+                settings = JSON.parse(settings);
+            }
+            const clients = settings.clients || [];
+            console.log('Клиенты получены:', clients.length);
             return clients;
         }
+        console.error('Ошибка ответа API:', response.data);
         return [];
     } catch (err) {
         console.error('Ошибка получения клиентов:', err.message);
         return [];
     }
 };
+
 // Добавить клиента в 3X-UI
 const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
     const clients = await getXUIClients();
