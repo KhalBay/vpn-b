@@ -92,13 +92,11 @@ const getXUIClients = async () => {
         });
         console.log('[getXUIClients] Статус:', response.status, 'success:', response.data.success);
         if (response.data.success && response.data.obj) {
-            const inbound = response.data.obj;
-            // Клиенты в clientStats
-            const clients = inbound.clientStats || [];
-            console.log('[getXUIClients] Получено клиентов:', clients.length);
+            const clients = response.data.obj.clientStats || [];
+            console.log('[getXUIClients] Клиентов:', clients.length);
             return clients;
         }
-        console.error('[getXUIClients] Ошибка ответа:', JSON.stringify(response.data).substring(0, 200));
+        console.error('[getXUIClients] Ошибка:', JSON.stringify(response.data).substring(0, 200));
         return [];
     } catch (err) {
         console.error('[getXUIClients] Ошибка:', err.message);
@@ -110,36 +108,32 @@ const getXUIClients = async () => {
 const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
     console.log('[addXUIClient] Добавляем:', email);
 
-    const newClient = {
+    const body = {
+        email: email,
         id: uuid,
         flow: 'xtls-rprx-vision',
-        email: email,
         limitIp: 1,
         totalGB: Math.floor(trafficLimitBytes / (1024 * 1024 * 1024)),
         expiryTime: expiryDate ? Math.floor(new Date(expiryDate).getTime()) : 0,
         enable: true,
-        tgId: '',
         subId: '',
-        reset: 0,
+        inboundIds: [INBOUND_ID],
     };
 
     try {
+        console.log('[addXUIClient] Отправляем...');
         const response = await xuiAxios.post(
-            `/panel/api/inbounds/addClient`,
-            {
-                id: INBOUND_ID,
-                settings: JSON.stringify({ clients: [newClient] }),
-            },
+            `/panel/api/clients/add`,
+            body,
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
-        console.log('[addXUIClient] Ответ:', response.status, JSON.stringify(response.data).substring(0, 300));
+        console.log('[addXUIClient] Статус:', response.status, 'success:', response.data.success);
 
         if (response.data.success) {
-            const created = newClient;
-            console.log('[addXUIClient] Клиент создан:', email);
-            return created;
+            console.log('[addXUIClient] Создан:', email);
+            return { email, id: uuid, enable: true };
         }
-        console.error('[addXUIClient] Ошибка:', response.data);
+        console.error('[addXUIClient] Ошибка:', JSON.stringify(response.data).substring(0, 300));
         return null;
     } catch (err) {
         console.error('[addXUIClient] Ошибка API:', err.message);
@@ -152,14 +146,11 @@ const removeXUIClient = async (email) => {
     console.log('[removeXUIClient] Удаляем:', email);
     try {
         const response = await xuiAxios.post(
-            `/panel/api/inbounds/delClient`,
-            {
-                id: INBOUND_ID,
-                email: email,
-            },
+            `/panel/api/clients/del/${email}`,
+            {},
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
-        console.log('[removeXUIClient] Ответ:', response.status, response.data.success);
+        console.log('[removeXUIClient] success:', response.data.success);
         return response.data.success;
     } catch (err) {
         console.error('[removeXUIClient] Ошибка:', err.message);
@@ -169,32 +160,21 @@ const removeXUIClient = async (email) => {
 
 // Обновить трафик/дату клиента
 const updateXUIClient = async (email, updates) => {
-    console.log('[updateXUIClient] Обновляем:', email);
-
-    const updateData = {
-        id: INBOUND_ID,
-        email: email,
-    };
-
-    if (updates.totalGB !== undefined) updateData.totalGB = updates.totalGB;
-    if (updates.expiryTime !== undefined) updateData.expiryTime = updates.expiryTime;
-    if (updates.up !== undefined) updateData.up = updates.up;
-    if (updates.down !== undefined) updateData.down = updates.down;
-    if (updates.enable !== undefined) updateData.enable = updates.enable;
-
+    console.log('[updateXUIClient] Обновляем:', email, updates);
     try {
         const response = await xuiAxios.post(
-            `/panel/api/inbounds/updateClient`,
-            updateData,
+            `/panel/api/clients/update/${email}`,
+            updates,
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
-        console.log('[updateXUIClient] Ответ:', response.status, response.data.success);
+        console.log('[updateXUIClient] success:', response.data.success);
         return response.data.success ? updates : null;
     } catch (err) {
         console.error('[updateXUIClient] Ошибка:', err.message);
         return null;
     }
 };
+
 // Генерация ссылки для подключения
 const generateVlessLink = (email, uuid) => {
     // VLESS Reality link format
