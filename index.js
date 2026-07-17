@@ -29,6 +29,9 @@ const xuiAxios = axios.create({
 // Сессия 3X-UI
 const XUI_API_TOKEN = process.env.XUI_API_TOKEN;
 
+console.log('ТОКЕН ЕСТЬ:', XUI_API_TOKEN ? 'ДА' : 'НЕТ');
+console.log('ДЛИНА ТОКЕНА:', XUI_API_TOKEN ? XUI_API_TOKEN.length : 0);
+
 app.use(cors());
 app.use(express.json());
 
