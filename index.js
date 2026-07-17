@@ -215,9 +215,9 @@ const updateXUIClient = async (email, updates) => {
 // Генерация ссылки для подключения
 const generateVlessLink = (email, uuid) => {
     // VLESS Reality link format
-    const serverName = 'www.apple.com'; // Маскировка под Apple
-    const publicKey = 'твой_public_key_reality'; // Возьми из настроек inbound
-    const shortId = ''; // Из настроек inbound
+    const serverName = 'www.amd.com';
+    const publicKey = '5a6kt1iCtKoio9VzYo3sgvvLmmbOEE6ygqpv3p6ZOD8';
+    const shortId = '736a';
     const flow = 'xtls-rprx-vision';
 
     // vless://uuid@ip:port?type=tcp&security=reality&pbk=publicKey&fp=chrome&sni=serverName&sid=shortId&flow=flow&encryption=none#name
