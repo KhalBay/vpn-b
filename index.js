@@ -86,29 +86,31 @@ initDB();
 // Получить список клиентов из 3X-UI
 const getXUIClients = async () => {
     try {
+        console.log('[getXUIClients] Запрос клиентов...');
         const response = await xuiAxios.get(`/panel/api/inbounds/get/${INBOUND_ID}`, {
             headers: { Authorization: `Bearer ${XUI_API_TOKEN}` },
         });
+        console.log('[getXUIClients] Статус:', response.status, 'success:', response.data.success);
         if (response.data.success && response.data.obj) {
             const inbound = response.data.obj;
-            // Клиенты находятся в clientStats
+            // Клиенты в clientStats
             const clients = inbound.clientStats || [];
-            console.log('Клиенты получены:', clients.length);
+            console.log('[getXUIClients] Получено клиентов:', clients.length);
             return clients;
         }
-        console.error('Ошибка ответа API:', response.data);
+        console.error('[getXUIClients] Ошибка ответа:', JSON.stringify(response.data).substring(0, 200));
         return [];
     } catch (err) {
-        console.error('Ошибка получения клиентов:', err.message);
+        console.error('[getXUIClients] Ошибка:', err.message);
         return [];
     }
 };
 
 // Добавить клиента в 3X-UI
 const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
-    const clients = await getXUIClients();
+    console.log('[addXUIClient] Добавляем:', email);
 
-    clients.push({
+    const newClient = {
         id: uuid,
         flow: 'xtls-rprx-vision',
         email: email,
@@ -119,64 +121,77 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
         tgId: '',
         subId: '',
         reset: 0,
-    });
+    };
 
     try {
         const response = await xuiAxios.post(
-            `/panel/inbound/update/${INBOUND_ID}`,
-            { settings: JSON.stringify({ clients }) },
+            `/panel/api/inbounds/addClient`,
+            {
+                id: INBOUND_ID,
+                settings: JSON.stringify({ clients: [newClient] }),
+            },
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
+        console.log('[addXUIClient] Ответ:', response.status, JSON.stringify(response.data).substring(0, 300));
 
         if (response.data.success) {
-            const updatedClients = await getXUIClients();
-            const created = updatedClients.find(c => c.email === email);
+            const created = newClient;
+            console.log('[addXUIClient] Клиент создан:', email);
             return created;
         }
-        console.error('Ошибка добавления клиента:', response.data);
+        console.error('[addXUIClient] Ошибка:', response.data);
         return null;
     } catch (err) {
-        console.error('Ошибка API 3X-UI:', err.message);
+        console.error('[addXUIClient] Ошибка API:', err.message);
         return null;
     }
 };
 
 // Удалить клиента из 3X-UI
 const removeXUIClient = async (email) => {
-    const clients = await getXUIClients();
-    const filtered = clients.filter(c => c.email !== email);
-
+    console.log('[removeXUIClient] Удаляем:', email);
     try {
         const response = await xuiAxios.post(
-            `/panel/inbound/update/${INBOUND_ID}`,
-            { settings: JSON.stringify({ clients: filtered }) },
+            `/panel/api/inbounds/delClient`,
+            {
+                id: INBOUND_ID,
+                email: email,
+            },
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
+        console.log('[removeXUIClient] Ответ:', response.status, response.data.success);
         return response.data.success;
     } catch (err) {
-        console.error('Ошибка удаления клиента:', err.message);
+        console.error('[removeXUIClient] Ошибка:', err.message);
         return false;
     }
 };
 
 // Обновить трафик/дату клиента
 const updateXUIClient = async (email, updates) => {
-    const clients = await getXUIClients();
-    const index = clients.findIndex(c => c.email === email);
-    if (index === -1) return null;
+    console.log('[updateXUIClient] Обновляем:', email);
 
-    Object.assign(clients[index], updates);
+    const updateData = {
+        id: INBOUND_ID,
+        email: email,
+    };
+
+    if (updates.totalGB !== undefined) updateData.totalGB = updates.totalGB;
+    if (updates.expiryTime !== undefined) updateData.expiryTime = updates.expiryTime;
+    if (updates.up !== undefined) updateData.up = updates.up;
+    if (updates.down !== undefined) updateData.down = updates.down;
+    if (updates.enable !== undefined) updateData.enable = updates.enable;
 
     try {
         const response = await xuiAxios.post(
-            `/panel/inbound/update/${INBOUND_ID}`,
-            { settings: JSON.stringify({ clients }) },
+            `/panel/api/inbounds/updateClient`,
+            updateData,
             { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
-        if (response.data.success) return clients[index];
-        return null;
+        console.log('[updateXUIClient] Ответ:', response.status, response.data.success);
+        return response.data.success ? updates : null;
     } catch (err) {
-        console.error('Ошибка обновления клиента:', err.message);
+        console.error('[updateXUIClient] Ошибка:', err.message);
         return null;
     }
 };
