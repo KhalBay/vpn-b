@@ -26,7 +26,7 @@ const xuiAxios = axios.create({
 });
 
 // Сессия 3X-UI
-let xuiSessionCookie = null;
+const XUI_API_TOKEN = process.env.XUI_API_TOKEN;
 
 app.use(cors());
 app.use(express.json());
@@ -79,36 +79,14 @@ const initDB = async () => {
 };
 initDB();
 
-// Авторизация в 3X-UI
-const loginToXUI = async () => {
-    try {
-        const response = await xuiAxios.post('/login', {
-            username: process.env.XUI_USERNAME,
-            password: process.env.XUI_PASSWORD,
-        });
-        if (response.data.success) {
-            xuiSessionCookie = response.headers['set-cookie']?.find(c => c.startsWith('session='));
-            console.log('✅ Авторизовались в 3X-UI');
-            return true;
-        }
-        console.error('❌ Ошибка входа в 3X-UI:', response.data);
-        return false;
-    } catch (err) {
-        console.error('❌ Ошибка подключения к 3X-UI:', err.message);
-        return false;
-    }
-};
-
 // Получить список клиентов из 3X-UI
 const getXUIClients = async () => {
-    if (!xuiSessionCookie) await loginToXUI();
     try {
         const response = await xuiAxios.get(`/panel/inbound/list`, {
-            headers: { Cookie: xuiSessionCookie },
+            headers: { Authorization: `Bearer ${XUI_API_TOKEN}` },
         });
         const inbound = response.data.obj?.find(i => i.id === INBOUND_ID);
         if (inbound) {
-            // Парсим clients из строки JSON
             const clients = JSON.parse(inbound.settings || '{}').clients || [];
             return clients;
         }
@@ -121,11 +99,8 @@ const getXUIClients = async () => {
 
 // Добавить клиента в 3X-UI
 const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
-    if (!xuiSessionCookie) await loginToXUI();
-
     const clients = await getXUIClients();
 
-    // Добавляем нового клиента
     clients.push({
         id: uuid,
         flow: 'xtls-rprx-vision',
@@ -142,16 +117,11 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
     try {
         const response = await xuiAxios.post(
             `/panel/inbound/update/${INBOUND_ID}`,
-            {
-                settings: JSON.stringify({ clients }),
-            },
-            {
-                headers: { Cookie: xuiSessionCookie },
-            }
+            { settings: JSON.stringify({ clients }) },
+            { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
 
         if (response.data.success) {
-            // Получаем обновлённого клиента
             const updatedClients = await getXUIClients();
             const created = updatedClients.find(c => c.email === email);
             return created;
@@ -166,18 +136,14 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
 
 // Удалить клиента из 3X-UI
 const removeXUIClient = async (email) => {
-    if (!xuiSessionCookie) await loginToXUI();
-
     const clients = await getXUIClients();
     const filtered = clients.filter(c => c.email !== email);
 
     try {
         const response = await xuiAxios.post(
             `/panel/inbound/update/${INBOUND_ID}`,
-            {
-                settings: JSON.stringify({ clients: filtered }),
-            },
-            { headers: { Cookie: xuiSessionCookie } }
+            { settings: JSON.stringify({ clients: filtered }) },
+            { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
         return response.data.success;
     } catch (err) {
@@ -188,8 +154,6 @@ const removeXUIClient = async (email) => {
 
 // Обновить трафик/дату клиента
 const updateXUIClient = async (email, updates) => {
-    if (!xuiSessionCookie) await loginToXUI();
-
     const clients = await getXUIClients();
     const index = clients.findIndex(c => c.email === email);
     if (index === -1) return null;
@@ -199,10 +163,8 @@ const updateXUIClient = async (email, updates) => {
     try {
         const response = await xuiAxios.post(
             `/panel/inbound/update/${INBOUND_ID}`,
-            {
-                settings: JSON.stringify({ clients }),
-            },
-            { headers: { Cookie: xuiSessionCookie } }
+            { settings: JSON.stringify({ clients }) },
+            { headers: { Authorization: `Bearer ${XUI_API_TOKEN}` } }
         );
         if (response.data.success) return clients[index];
         return null;
@@ -211,7 +173,6 @@ const updateXUIClient = async (email, updates) => {
         return null;
     }
 };
-
 // Генерация ссылки для подключения
 const generateVlessLink = (email, uuid) => {
     // VLESS Reality link format
@@ -511,5 +472,4 @@ app.get('/health', async (req, res) => {
 // Запуск
 app.listen(port, async () => {
     console.log(`🚀 VPN сервер запущен на порту ${port}`);
-    await loginToXUI();
 });
