@@ -83,11 +83,11 @@ initDB();
 // Получить список клиентов из 3X-UI
 const getXUIClients = async () => {
     try {
-        const response = await xuiAxios.get(`/panel/inbound/list`, {
+        const response = await xuiAxios.get(`/panel/api/inbounds/get/${INBOUND_ID}`, {
             headers: { Authorization: `Bearer ${XUI_API_TOKEN}` },
         });
-        const inbound = response.data.obj?.find(i => i.id === INBOUND_ID);
-        if (inbound) {
+        if (response.data.success && response.data.obj) {
+            const inbound = response.data.obj;
             const clients = JSON.parse(inbound.settings || '{}').clients || [];
             return clients;
         }
@@ -97,7 +97,6 @@ const getXUIClients = async () => {
         return [];
     }
 };
-
 // Добавить клиента в 3X-UI
 const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate) => {
     const clients = await getXUIClients();
