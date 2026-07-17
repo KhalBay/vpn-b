@@ -275,7 +275,6 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // Получить демо-доступ (7 дней, 500 МБ)
-// Получить демо-доступ (7 дней, 500 МБ)
 app.post('/vpn/demo', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
 
@@ -304,9 +303,9 @@ app.post('/vpn/demo', authenticateToken, async (req, res) => {
 
         // Сохраняем в БД
         await pool.query(
-            `INSERT INTO vpn_clients (user_id, client_type, xui_email, xui_uuid, xui_password, xui_inbound_id, traffic_limit_bytes, expiry_date, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
-            [userId, 'demo', email, uuid, password, INBOUND_ID, trafficBytes, expiryDate]
+            `INSERT INTO vpn_clients (user_id, client_type, xui_email, xui_uuid, xui_inbound_id, traffic_limit_bytes, expiry_date, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+            [userId, 'demo', email, uuid, INBOUND_ID, trafficBytes, expiryDate]
         );
 
         const link = generateVlessLink(email, uuid);
@@ -391,8 +390,9 @@ app.post('/vpn/renew', authenticateToken, async (req, res) => {
 
         // Обновляем в БД
         await pool.query(
-            `UPDATE vpn_clients SET traffic_limit_bytes = $1, expiry_date = $2 WHERE id = $3`,
-            [newTrafficBytes, newExpiry, clientId]
+            `INSERT INTO vpn_clients (user_id, client_type, xui_email, xui_uuid, xui_inbound_id, traffic_limit_bytes, expiry_date, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+            [userId, 'paid', email, uuid, INBOUND_ID, trafficBytes, expiryDate]
         );
 
         res.json({
@@ -406,7 +406,6 @@ app.post('/vpn/renew', authenticateToken, async (req, res) => {
     }
 });
 
-// Купить VPN (создать платного клиента)
 // Купить VPN (создать платного клиента)
 app.post('/vpn/buy', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
