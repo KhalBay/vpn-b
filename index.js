@@ -275,6 +275,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // Получить демо-доступ (7 дней, 500 МБ)
+// Получить демо-доступ (7 дней, 500 МБ)
 app.post('/vpn/demo', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
 
@@ -405,6 +406,7 @@ app.post('/vpn/renew', authenticateToken, async (req, res) => {
     }
 });
 
+// Купить VPN (создать платного клиента)
 // Купить VPN (создать платного клиента)
 app.post('/vpn/buy', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
