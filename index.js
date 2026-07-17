@@ -109,14 +109,16 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
     console.log('[addXUIClient] Добавляем:', email);
 
     const body = {
-        email: email,
-        id: uuid,
-        flow: 'xtls-rprx-vision',
-        limitIp: 1,
-        totalGB: Math.floor(trafficLimitBytes / (1024 * 1024 * 1024)),
-        expiryTime: expiryDate ? Math.floor(new Date(expiryDate).getTime()) : 0,
-        enable: true,
-        subId: '',
+        client: {
+            email: email,
+            totalGB: Math.floor(trafficLimitBytes / (1024 * 1024 * 1024)),
+            expiryTime: expiryDate ? Math.floor(new Date(expiryDate).getTime()) : 0,
+            limitIp: 1,
+            enable: true,
+            flow: 'xtls-rprx-vision',
+            subId: '',
+            tgId: '',
+        },
         inboundIds: [INBOUND_ID],
     };
 
@@ -131,16 +133,15 @@ const addXUIClient = async (email, uuid, password, trafficLimitBytes, expiryDate
 
         if (response.data.success) {
             console.log('[addXUIClient] Создан:', email);
-            return { email, id: uuid, enable: true };
+            return { email, enable: true };
         }
-        console.error('[addXUIClient] Ошибка:', JSON.stringify(response.data).substring(0, 300));
+        console.error('[addXUIClient] Ошибка:', JSON.stringify(response.data));
         return null;
     } catch (err) {
-        console.error('[addXUIClient] Ошибка API:', err.message);
+        console.error('[addXUIClient] Ошибка:', err.message);
         return null;
     }
 };
-
 // Удалить клиента из 3X-UI
 const removeXUIClient = async (email) => {
     console.log('[removeXUIClient] Удаляем:', email);
